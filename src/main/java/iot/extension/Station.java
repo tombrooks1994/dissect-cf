@@ -88,6 +88,7 @@ public class Station extends DeferredEvent implements ConsumptionEvent{
 		Timed.simulateUntilLastEvent();
 		Cloud cloud = new Cloud();
 		s.startCommunicate(cloud.is, s.repo);	
+		Timed.simulateUntilLastEvent();
 	}
 
 
