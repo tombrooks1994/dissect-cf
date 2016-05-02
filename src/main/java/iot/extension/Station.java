@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
-import java.util.spi.ResourceBundleControlProvider;
+
 
 import javax.xml.parsers.ParserConfigurationException;
 
@@ -37,7 +37,7 @@ public class Station extends DeferredEvent implements ConsumptionEvent{
 		vm = new VirtualMachine(va);
 		so = new ArrayList<StorageObject>();
 		lmap = new HashMap<String, Integer>();
-		lat = 5;
+		lat = 11;
 		toRepoID="ceph";
 		repoID = "StationRepo";
 		lmap.put(repoID, lat);
@@ -61,34 +61,41 @@ public class Station extends DeferredEvent implements ConsumptionEvent{
 	
 	@Override
 	public void conComplete() {
-		System.out.println("something happend!");
-		
+		//System.out.println("something happend!");
 	}
-
+	
 	@Override
 	public void conCancelled(ResourceConsumption problematic) {
 		System.out.println("conCancelled was called!");
-		
 	}
 	
 	public void startCommunicate(IaaSService cloud,Repository repo) throws NetworkException{
 		// 2 repo: forras: repo cel: cloud.repositories.get(0);
 			
 			for(StorageObject so : repo.contents()){
-			repo.requestContentDelivery(so.id, cloud.repositories.get(0), this);  // returns with boolean if the transfer successful
+			repo.requestContentDelivery(so.id, cloud.repositories.get(0), this);  // returns with boolean if the transfer successful	
+		
  		}
-		
-		
-		    
-		          
+		Timed.simulateUntilLastEvent();
 	}
 	
+	public static void generateSensorSystem(Cloud cloud) throws IOException, SAXException, ParserConfigurationException, NetworkException{
+		while(true){
+			Station[] sArray= new Station[6];
+			for (int i=0;i<6;i++){
+				sArray[i]=new Station(1);
+				Timed.simulateUntilLastEvent();
+				sArray[i].startCommunicate(cloud.is, sArray[i].repo);	
+			}
+			System.out.println(cloud.is.toString()); 
+		}
+	}
+	
+	// main method for quick test
 	public static void main(String[] args) throws IOException, SAXException, ParserConfigurationException, NetworkException{
-		Station s = new Station(1);
-		Timed.simulateUntilLastEvent();
 		Cloud cloud = new Cloud();
-		s.startCommunicate(cloud.is, s.repo);	
-		Timed.simulateUntilLastEvent();
+		generateSensorSystem(cloud);
+
 	}
 
 
