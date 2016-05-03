@@ -45,17 +45,14 @@ public class Station extends DeferredEvent implements ConsumptionEvent{
 		repo = new Repository(600000000L, repoID, 100000L, 100000L, 100000L, lmap);
 	}
 
+	// function eventAction generates 1000 StorageObjects
 	@Override
 	protected void eventAction() {
-		
 		for(int i=0;i<1000;i++){
 			Calendar cal = Calendar.getInstance();
 			SimpleDateFormat sdf = new SimpleDateFormat("yy:MM:dd:HH:mm:ss:SS");
 			StorageObject so = new StorageObject(sdf.format(cal.getTime())+" ("+i+")", 256, false);
 			repo.registerObject(so);
-		
-			//System.out.println(so.toString() + "  .:. "+ repo.toString());
-			
 		}
 	}
 	
@@ -71,31 +68,49 @@ public class Station extends DeferredEvent implements ConsumptionEvent{
 	
 	public void startCommunicate(IaaSService cloud,Repository repo) throws NetworkException{
 		// 2 repo: forras: repo cel: cloud.repositories.get(0);
-			
-			for(StorageObject so : repo.contents()){
-			repo.requestContentDelivery(so.id, cloud.repositories.get(0), this);  // returns with boolean if the transfer successful	
-		
+		for(StorageObject so : repo.contents()){
+		repo.requestContentDelivery(so.id, cloud.repositories.get(0), this);  // returns with boolean if the transfer successful	
+		//Timed.simulateUntilLastEvent();
  		}
-		Timed.simulateUntilLastEvent();
 	}
 	
-	public static void generateSensorSystem(Cloud cloud) throws IOException, SAXException, ParserConfigurationException, NetworkException{
-		while(true){
-			Station[] sArray= new Station[6];
-			for (int i=0;i<6;i++){
-				sArray[i]=new Station(1);
+	// iteration
+	public static void generateSensorSystemIteration(Cloud cloud) throws NetworkException{
+		int i=0;
+		long tt=24*60*60*1000;//one day in ms
+		Station[] s = new Station[6];
+		//tick=ms 
+		while(i<1000){
+			for(int j=0;j<6;j++){
+				s[j] = new Station(1);
 				Timed.simulateUntilLastEvent();
-				sArray[i].startCommunicate(cloud.is, sArray[i].repo);	
+				s[j].startCommunicate(cloud.is, s[j].repo);
+				Timed.simulateUntilLastEvent();
 			}
-			System.out.println(cloud.is.toString()); 
+			i++;
+		}
+	}
+	
+	//simulated days
+	public static void generateSensorSystemDays(Cloud cloud,long t) throws NetworkException{
+		long tt=24*60*60*1000;//one day in ms
+		Station[] s = new Station[6];
+		//tick=ms 
+		while(Timed.getFireCount()<(tt*t)){
+			for(int j=0;j<6;j++){
+				s[j] = new Station(1);
+				Timed.simulateUntilLastEvent();
+				s[j].startCommunicate(cloud.is, s[j].repo);
+				Timed.simulateUntilLastEvent();
+			}
 		}
 	}
 	
 	// main method for quick test
 	public static void main(String[] args) throws IOException, SAXException, ParserConfigurationException, NetworkException{
 		Cloud cloud = new Cloud();
-		generateSensorSystem(cloud);
-
+		Station.generateSensorSystemDays(cloud,1);
+		System.out.println(cloud.is.toString()); 
 	}
 
 
