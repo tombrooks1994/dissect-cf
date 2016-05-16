@@ -62,8 +62,8 @@ public class Station implements ConsumptionEvent{
 	}
 	
 	public static void Send(Station s,Cloud cloud,long t) throws NetworkException{
-		long tt=100*1000;
-		//long tt=24*60*60*1000;//one day in ms
+		//long tt=100*1000;
+		long tt=24*60*60*1000;//one day in ms
 		
 		while(Timed.getFireCount()<(tt*t)){
 			Metering m =new Metering(1);
