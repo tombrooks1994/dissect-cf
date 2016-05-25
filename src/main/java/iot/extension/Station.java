@@ -1,22 +1,15 @@
 package iot.extension;
 
-import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
-
-
-import javax.xml.parsers.ParserConfigurationException;
-import iot.extension.*;
-import org.xml.sax.SAXException;
-
 import hu.mta.sztaki.lpds.cloud.simulator.io.*;
 import hu.mta.sztaki.lpds.cloud.simulator.io.NetworkNode.NetworkException;
 import hu.mta.sztaki.lpds.cloud.simulator.*;
 import hu.mta.sztaki.lpds.cloud.simulator.iaas.IaaSService;
+import hu.mta.sztaki.lpds.cloud.simulator.iaas.PhysicalMachine;
 import hu.mta.sztaki.lpds.cloud.simulator.iaas.VirtualMachine;
+import hu.mta.sztaki.lpds.cloud.simulator.iaas.constraints.AlterableResourceConstraints;
 import hu.mta.sztaki.lpds.cloud.simulator.iaas.resourcemodel.*;
 import hu.mta.sztaki.lpds.cloud.simulator.iaas.resourcemodel.ResourceConsumption.ConsumptionEvent;
 
@@ -28,13 +21,13 @@ public class Station implements ConsumptionEvent{
 	int lat;
 	String repoID;
 	String toRepoID;
-	VirtualMachine vm ;
-	VirtualAppliance va;
-
-	public Station() {
-		
-		//va =  new VirtualAppliance("BaseVA", 1000, 0);
-		//vm = new VirtualMachine(va);
+	public static VirtualAppliance va;
+	
+	
+	public Station(Cloud cloud) {
+		//va =  new VirtualAppliance("BaseVA", 1000, 0,false, 1073741824);
+		va =  new VirtualAppliance("BaseVA", 1000, 0,false, 1000000000);
+		cloud.is.machines.get(0).localDisk.registerObject(va);
 		so = new ArrayList<StorageObject>();
 		lmap = new HashMap<String, Integer>();
 		lat = 11;
@@ -61,26 +54,56 @@ public class Station implements ConsumptionEvent{
  		}
 	}
 	
-	public static void Send(Station s,Cloud cloud,long t) throws NetworkException{
-		//long tt=100*1000;
-		long tt=24*60*60*1000;//one day in ms
-		
+	public static void SendToCloud(Station s,Cloud cloud,long t) throws NetworkException{
+		long tt=100*1000;
+		//long tt=24*60*60*1000;//one day in ms
 		while(Timed.getFireCount()<(tt*t)){
 			Metering m =new Metering(1);
 			s.startCommunicate(cloud.is, Station.repo);
-			Timed.simulateUntil(tt);
-			//System.out.println(Timed.getFireCount());		
+			Timed.simulateUntil(tt*t);
 		}
 		
 	}
+	
+	
 
-	public static void main(String[] args) throws IOException, SAXException, ParserConfigurationException, NetworkException{
-		Cloud cloud = new Cloud();
-		Station s = new Station();
-		Send(s,cloud,1);
-		System.out.println(cloud.is.toString()); 
+	
+	public  void VMallocate(Cloud cloud,VirtualAppliance va,int count) throws Exception{
+		AlterableResourceConstraints arc = new AlterableResourceConstraints(8,0.001,16000000000L);
+		cloud.is.requestVM(va, arc,cloud.is.machines.get(0).localDisk, count);	
+		Repository r = cloud.is.repositories.get(0);
+		for(PhysicalMachine pm : cloud.is.machines){
+		//	if(!pm.listVMs().isEmpty()){
+			for(VirtualMachine vm : pm.listVMs()){
+				for(StorageObject so : r.contents()){
+					r.requestContentDelivery(so.id, pm.localDisk, this);  
+			 	}
+				ConsumptionEventAdapter ce = new ConsumptionEventAdapter() {
+					@Override
+					public void conComplete() {
+						System.out.println("VM computeTask has ended");
+					}
+				};
+				
+				vm.newComputeTask(10000000, ResourceConsumption.unlimitedProcessing, ce);
+				Timed.simulateUntil(Timed.getFireCount()+10000000L);
+				
+			}		
+		}
+		
+
 	}
-
-
-
+	
+	public static void main(String[] args) throws Exception{
+		Cloud cloud = new Cloud();
+		Station s = new Station(cloud);
+		SendToCloud(s,cloud,1);
+		s.VMallocate(cloud, Station.va, 7);
+		
+		Timed.simulateUntilLastEvent();
+		System.out.println(cloud.is.repositories.toString()); 
+		for(PhysicalMachine p : cloud.is.machines){
+			if(p.isHostingVMs()){ System.out.println(p) ;}
+		}
+	}
 }
