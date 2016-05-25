@@ -20,8 +20,9 @@ public Metering(long delay) {
 
 			Calendar cal = Calendar.getInstance();
 			SimpleDateFormat sdf = new SimpleDateFormat("yy:MM:dd:HH:mm:ss:SS");
-			StorageObject so = new StorageObject(Timed.getFireCount()+" .:. "+sdf.format(cal.getTime()), 256, false);
+			StorageObject so = new StorageObject(Timed.getFireCount()+" .:. "+sdf.format(cal.getTime()), 1024, false);
 			Station.repo.registerObject(so);
+			//System.out.println(Timed.getFireCount());
 			//Metering m = new Metering(1);
 	}
 }
