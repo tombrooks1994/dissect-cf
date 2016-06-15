@@ -1,5 +1,6 @@
 package iot.extension;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import hu.mta.sztaki.lpds.cloud.simulator.io.*;
 import hu.mta.sztaki.lpds.cloud.simulator.io.NetworkNode.NetworkException;
@@ -18,12 +19,15 @@ public class Station implements ConsumptionEvent {
 	private int lat;
 	private String repoID;
 	private String toRepoID;
+	public String name;
+	public static ArrayList<Station> stations;
 
 	/*
 	 * Konstruktor letrehozza a repo-t, egy halozatba szervezi a 'cloud'
 	 * IaaS-szel Station ~= Szenzor
 	 */
-	public Station(Cloud cloud) {
+	public Station(Cloud cloud, String name) {
+		this.name = name;
 		lmap = new HashMap<String, Integer>();
 		lat = 11;
 		toRepoID = "ceph";
@@ -59,17 +63,65 @@ public class Station implements ConsumptionEvent {
 	}
 
 	/*
+	 * Aktuator viselkedesenek szimulalasa
+	 *  -1 eseten gyorsitja a meresek generalasat
+	 *  1 eseten lassitja a meresek generalasat
+	 *  a parameterben atadott tomb alapjan
+	 * 
+	 */
+	public void SendToCloudWithActuator(Station s, Cloud cloud, long t, long simulatedTime,int actuator[],long delay,int filesize) throws NetworkException {
+		boolean validValue=true;
+		long tt = 100 * 1000;
+		if(actuator!=null){
+			for(int i=0;i<actuator.length;i++){
+				if(actuator[i]!=0 && actuator[i]!=1 && actuator[i]!=-1){
+					validValue=false;
+					System.out.println("rossz ertek");
+				}
+			}
+		}
+		else{
+			validValue=false;
+		}
+		if(validValue==false){
+			SendToCloud(s,cloud,t,simulatedTime,delay,filesize);
+		}
+		else{
+			if(actuator.length<2){
+				SendToCloud(s,cloud,t,simulatedTime,delay,filesize);
+			}
+			else{
+				long intervals = (tt*t)/actuator.length;
+				
+				for(int i=0;i<actuator.length;i++){
+					
+					if(actuator[i]==1){
+						delay *=2;
+					}
+					if(actuator[i]==-1){
+						delay /=2;
+					}
+					while (Timed.getFireCount() < simulatedTime + intervals*(i+1)) {
+						new Metering(delay, filesize);
+						s.startCommunicate(cloud.is, Station.repo);
+						Timed.simulateUntil(simulatedTime + intervals*(i+1));
+					}
+				}
+			}
+		}
+	}
+	
+	/*
 	 * SendToCloud metodus, 't' -szeres ideig mereseket general
 	 */
-	public void SendToCloud(Station s, Cloud cloud, long t, long d) throws NetworkException {
+	public void SendToCloud(Station s, Cloud cloud, long t, long simulatedTime, long delay,int filesize) throws NetworkException {
 		long tt = 100 * 1000;
 		// long tt=24*60*60*1000;//one day in ms
-		while (Timed.getFireCount() < d + (tt * t)) {
-			new Metering(1, 1024);
+		while (Timed.getFireCount() < simulatedTime + (tt * t)) {
+			new Metering(delay, filesize);
 			s.startCommunicate(cloud.is, Station.repo);
-			Timed.simulateUntil(d + tt * t);
+			Timed.simulateUntil(simulatedTime + tt * t);
 		}
-
 	}
 
 	/*
@@ -103,27 +155,8 @@ public class Station implements ConsumptionEvent {
 						System.out.println("VM computeTask has ended");
 					}
 				};
-				vm.newComputeTask(10000000, ResourceConsumption.unlimitedProcessing, ce);
-			}
-		}
-	}
-
-	public static void main(String[] args) throws Exception {
-
-		VirtualAppliance va = new VirtualAppliance("BaseVA", 1000, 0, false, 1000000000);
-		Cloud cloud = new Cloud(va);
-
-		for (int i = 0; i < 2; i++) {
-			Station s = new Station(cloud);
-			s.SendToCloud(s, cloud, 1, Timed.getFireCount());
-		}
-		VMallocate(cloud, cloud.getVa(), 6);
-		Timed.simulateUntilLastEvent();
-
-		System.out.println(cloud.is.repositories.toString());
-		for (PhysicalMachine p : cloud.is.machines) {
-			if (p.isHostingVMs()) {
-				System.out.println(p);
+				vm.newComputeTask((r.getMaxStorageCapacity() - r.getFreeStorageCapacity() )/1024*10000000 , ResourceConsumption.unlimitedProcessing, ce);
+				
 			}
 		}
 	}

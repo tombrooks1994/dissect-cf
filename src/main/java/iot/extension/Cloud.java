@@ -8,8 +8,9 @@ import hu.mta.sztaki.lpds.cloud.simulator.iaas.*;
 import hu.mta.sztaki.lpds.cloud.simulator.io.VirtualAppliance;
 
 public class Cloud {
-	IaaSService is;
-	VirtualAppliance va;
+	public IaaSService is;
+	private VirtualAppliance va;
+	public static VirtualAppliance v = new VirtualAppliance("BaseVA", 1000, 0, false, 1000000000); // default static VA to reach from everywhere
 
 	public VirtualAppliance getVa() {
 		return va;
