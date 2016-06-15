@@ -102,6 +102,7 @@ public class Station implements ConsumptionEvent {
 						delay /=2;
 					}
 					while (Timed.getFireCount() < simulatedTime + intervals*(i+1)) {
+						
 						new Metering(delay, filesize);
 						s.startCommunicate(cloud.is, Station.repo);
 						Timed.simulateUntil(simulatedTime + intervals*(i+1));
@@ -115,7 +116,7 @@ public class Station implements ConsumptionEvent {
 	 * SendToCloud metodus, 't' -szeres ideig mereseket general
 	 */
 	public void SendToCloud(Station s, Cloud cloud, long t, long simulatedTime, long delay,int filesize) throws NetworkException {
-		long tt = 100 * 1000;
+		long tt = 10000;
 		// long tt=24*60*60*1000;//one day in ms
 		while (Timed.getFireCount() < simulatedTime + (tt * t)) {
 			new Metering(delay, filesize);
@@ -132,15 +133,26 @@ public class Station implements ConsumptionEvent {
 	 */
 	public static void VMallocate(Cloud cloud, VirtualAppliance va, int count) throws Exception {
 		AlterableResourceConstraints arc = new AlterableResourceConstraints(8, 0.001, 16000000000L);
-		cloud.is.requestVM(va, arc, cloud.is.machines.get(0).localDisk, count);
+		VirtualMachine[] ArrayVM = new VirtualMachine[count];
+		ArrayVM=cloud.is.requestVM(va, arc, cloud.is.machines.get(0).localDisk, count);
 		Repository r = cloud.is.repositories.get(0);
 
-		for (PhysicalMachine pm : cloud.is.machines) {
-			for (VirtualMachine vm : pm.listVMs()) {
-				while (!vm.getState().equals(State.RUNNING)) {
-					Timed.simulateUntil(Timed.getFireCount() + 1);
+		for (VirtualMachine vm : ArrayVM) {
+			while (!vm.getState().equals(State.RUNNING)) {
+				Timed.simulateUntil(Timed.getFireCount() + 1);
+			}
+				ConsumptionEventAdapter ce = new ConsumptionEventAdapter() {
+				@Override
+				public void conComplete() {
+					System.out.println("VM computeTask has ended");
 				}
-
+			};
+			vm.newComputeTask((r.getMaxStorageCapacity() - r.getFreeStorageCapacity() )/1024*10000000 , ResourceConsumption.unlimitedProcessing, ce);		
+		
+			
+		}
+		for (PhysicalMachine pm : cloud.is.machines) {
+			if(pm.isHostingVMs()){
 				ConsumptionEventAdapter e = new ConsumptionEventAdapter() {
 					@Override
 					public void conComplete() {
@@ -148,16 +160,8 @@ public class Station implements ConsumptionEvent {
 					}
 				};
 				pm.localDisk.readToMemory(r.getMaxStorageCapacity() - r.getFreeStorageCapacity(), 1000, false, e);
-
-				ConsumptionEventAdapter ce = new ConsumptionEventAdapter() {
-					@Override
-					public void conComplete() {
-						System.out.println("VM computeTask has ended");
-					}
-				};
-				vm.newComputeTask((r.getMaxStorageCapacity() - r.getFreeStorageCapacity() )/1024*10000000 , ResourceConsumption.unlimitedProcessing, ce);
-				
 			}
+			
 		}
 	}
 }

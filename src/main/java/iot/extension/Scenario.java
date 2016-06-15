@@ -18,7 +18,7 @@ public class Scenario {
 	private int filesize;
 	private int[] actuators;
 	
-	public Scenario(VirtualAppliance va,int delay,int filesize,String datafile,int[] actuators,int VMnumber) throws Exception{
+	public Scenario(VirtualAppliance va,int delay,int filesize,String datafile,int[] actuators,int VMnumber,int t) throws Exception{
 		Cloud cloud;
 		boolean izReady=true; // bool valtozo, hogy ha sikeres a scenario letrehozasa elinditja a szimulaciot
 		if(va==null){
@@ -53,8 +53,9 @@ public class Scenario {
 		if(izReady){
 			for(Station s : stations){
 				
-				s.SendToCloudWithActuator(s, cloud, 1, Timed.getFireCount(),actuators,delay,filesize);
+				s.SendToCloudWithActuator(s, cloud, t, Timed.getFireCount(),actuators,delay,filesize);
 				System.out.println(Timed.getFireCount());
+				
 				
 				System.out.println("in progress: "+s.name);
 			}

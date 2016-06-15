@@ -20,13 +20,10 @@ public class ReadXML{
 		doc.getDocumentElement().normalize();
 
 		NodeList nList = doc.getElementsByTagName("Station");
-				
+
 		for (int temp = 0; temp < nList.getLength(); temp++) {
-			Node nNode = nList.item(temp);		
-			if (nNode.getNodeType() == Node.ELEMENT_NODE) {
-				Element eElement = (Element) nNode;
-				stations.add(new Station(cloud,eElement.getAttribute("name")));
-			}
+			Node nNode = nList.item(temp);
+			stations.add(new Station(cloud,nNode.getTextContent()));
 		}
 		return stations;
 	}
