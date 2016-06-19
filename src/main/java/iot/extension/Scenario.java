@@ -1,67 +1,73 @@
 package iot.extension;
 
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
-
-import javax.xml.parsers.ParserConfigurationException;
-
-import org.xml.sax.SAXException;
-
 import hu.mta.sztaki.lpds.cloud.simulator.Timed;
 import hu.mta.sztaki.lpds.cloud.simulator.iaas.PhysicalMachine;
 import hu.mta.sztaki.lpds.cloud.simulator.io.VirtualAppliance;
 
 public class Scenario {
-	private ArrayList<Station> stations;
-	private int delay;
-	private int filesize;
-	private int[] actuators;
-	
-	public Scenario(VirtualAppliance va,int delay,int filesize,String datafile,int[] actuators,int VMnumber,int t) throws Exception{
+	public static ArrayList<Station> stations = null;
+
+	/**
+	 * Konstruktorral indithato szimulacio
+	 * 
+	 * @param va
+	 *            VirtualApplience, ha null akkor a Cloud default VA-jat
+	 *            hasznalja
+	 * @param delay
+	 *            Metering kesleltese
+	 * @param filesize
+	 *            Metering altal letrehozott fajl merete
+	 * @param datafile
+	 *            A Station-oket tartalmazo XML fajl helye a rendszerben
+	 * @param actuators
+	 *            Statikus aktuator betoltse, null, ha nincs
+	 * @param VMnumber
+	 *            a VM szama
+	 * @param t
+	 *            a szimulalt ido
+	 * @param sensornumber
+	 *            a Station szenzorainak a szama
+	 * @throws Exception
+	 */
+	public Scenario(VirtualAppliance va, int filesize, String datafile, int[] actuators, int VMnumber, int t,
+			int sensornumber) throws Exception {
 		Cloud cloud;
-		boolean izReady=true; // bool valtozo, hogy ha sikeres a scenario letrehozasa elinditja a szimulaciot
-		if(va==null){
+		boolean isReady = true; // bool valtozo, hogy ha sikeres a scenario
+								// letrehozasa elinditja a szimulaciot
+		if (va == null) {
 			cloud = new Cloud(Cloud.v); // IaaS letrehozasa defaulta VA-val
+		} else {
+			cloud = new Cloud(va);
 		}
-		else{
-			 cloud = new Cloud(va);
-		}
-		if(datafile.isEmpty()){
-			izReady=false;
+		if (datafile.isEmpty()) {
+			isReady = false;
 			System.out.println("Datafile nem lehet null");
+		} else {
+			stations = ReadXML.ReadFromXML(cloud, datafile);
 		}
-		else{
-			stations=ReadXML.ReadFromXML(cloud,datafile);
-		}
-		this.filesize=filesize;
-		if(filesize<=0){
+
+		if (filesize <= 0) {
 			System.out.println("Filesize nem lehet 0-nal kisebb");
-			izReady=false;
+			isReady = false;
 		}
-		this.delay=delay;
-		if(delay<=0){
-			System.out.println("Delay nem lehet 0-nal kisebb");
-			izReady=false;
-		}
-		if(VMnumber<=0){
-			System.out.println("VMnumber nem lehet 0-nal kisebb");
-			izReady=false;
-		}
-		this.actuators=actuators;
+
 		
-		if(izReady){
-			for(Station s : stations){
-				
-				s.SendToCloudWithActuator(s, cloud, t, Timed.getFireCount(),actuators,delay,filesize);
-				System.out.println(Timed.getFireCount());
-				
-				
-				System.out.println("in progress: "+s.name);
-			}
+		if (VMnumber <= 0) {
+			System.out.println("VMnumber nem lehet 0-nal kisebb");
+			isReady = false;
+		}
+		if (sensornumber <= 0) {
+			System.out.println("sensornumber nem lehet 0-nal kisebb");
+			isReady = false;
+		}
+
+		if (isReady) {
+
+			Station.SendToCloudWithActuator(cloud, t, Timed.getFireCount(),actuators, filesize, sensornumber);
 			Station.VMallocate(cloud, cloud.getVa(), VMnumber);
 			Timed.simulateUntilLastEvent();
-			
+
 			System.out.println("~~~~~~~~~~~~");
 			System.out.println(cloud.is.repositories.toString());
 			System.out.println("~~~~~~~~~~~~");
@@ -71,9 +77,9 @@ public class Scenario {
 				}
 			}
 			System.out.println("~~~~~~~~~~~~");
-		}
-		else{
+		} else {
 			System.out.println("Scenario-t nem lehet vegrehajtani!");
 		}
 	}
+
 }
