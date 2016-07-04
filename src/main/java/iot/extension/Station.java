@@ -97,12 +97,17 @@ public class Station extends Timed implements ConsumptionEvent {
 	}
 	
 	@Override
-	public void tick(long fires) throws NetworkException {
+	public void tick(long fires)  {
 		if(Timed.getFireCount()>5000L){
 			this.stopMeter();
 		}
 		new Metering(this.name);
-		this.startCommunicate();
+		try {
+			this.startCommunicate();
+		} catch (NetworkException e) {
+			
+			e.printStackTrace();
+		}
 	}
 	
 public static void main(String[] args) throws Exception{
