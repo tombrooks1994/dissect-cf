@@ -9,11 +9,11 @@ public class Metering extends DeferredEvent {
 	int b,i;
 	String sName;
 	
-	public Metering(int b,String sName,int i) {
+	public Metering(String sName) {
 		super(1);
-		this.b = b;
+		
 		this.sName=sName;
-		this.i=i;
+		
 	}
 
 	@Override
@@ -22,11 +22,12 @@ public class Metering extends DeferredEvent {
 		SimpleDateFormat sdf = new SimpleDateFormat("yy:MM:dd:HH:mm:ss:SS");
 		
 		StorageObject so = new StorageObject(Timed.getFireCount() + i+sName +" .:. " + sdf.format(cal.getTime()), 1024, false);
-		//Station.getRepo().registerObject(so);
-		for(Station station : Scenario.stations){
-			if(station.name.equals(this.sName)){
-				station.getRepo().registerObject(so);
+		for(Station s : Station.stations){
+			if(s.getName().equals(this.sName)){
+				s.getRepo().registerObject(so);
+				Station.SOnumber++;
 			}
 		}
+		
 	}
 }
