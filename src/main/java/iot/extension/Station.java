@@ -19,10 +19,12 @@ public class Station extends Timed implements ConsumptionEvent {
 	private String repoID;
 	private String toRepoID;
 	private String name;
+	private long time;
+	private int filesize;
+	private int sensornumber;
 	private PhysicalMachine pm;
 	private boolean isWorking = true;
 	public static ArrayList<Station> stations=new ArrayList<Station>();
-	public static long SOnumber=0;
 	public static final double minpower = 20;
 	public static final double idlepower = 200;
 	public static final double maxpower = 300;
@@ -39,20 +41,40 @@ public class Station extends Timed implements ConsumptionEvent {
 					"Cannot initialize the default transitions");
 		}
 	}
-	public Station(String name,final long freq) {
+	/**
+	 * Konstruktor meroallomas szimulalasahoz
+	 * @param name allomasnev, egyedinek kell lennie
+	 * @param freq allomas frekvenciaja
+	 * @param time allomas mukodesi ideje
+	 * @param sensornumber allomas szenzorainak a szama
+	 * @param filesize szenzor altal mert adat merete
+	 */
+	public Station(String name,final long freq,long time,int sensornumber,int filesize,long maxinbw,long maxoutbw,long diskbw,String torepo) {
 		this.startMeter(freq);
 		this.name = name;
+		this.filesize=filesize;
+		this.time=time;
+		this.sensornumber=sensornumber;
 		lmap = new HashMap<String, Integer>();
 		lat = 11;
-		toRepoID = "ceph";
+		//toRepoID = "ceph";
+		toRepoID = torepo;
 		repoID = "StationRepo"+" - "+this.name;
 		lmap.put(repoID, lat);
 		lmap.put(toRepoID, lat);
-		repo = new Repository(600000000L, repoID, 100000L, 100000L, 100000L, lmap);
+		repo = new Repository(600000000L, repoID, maxinbw, maxoutbw, diskbw, lmap);
 		pm = new PhysicalMachine(8, 0.00155875, 8000000000L, repo, 89000, 29000, defaultTransitions);
-		stations.add(this);
+		
 	}
-	
+	/*
+	 *  Getterek&Setterek
+	 */
+	public long getTime() {
+		return time;
+	}
+	public int getSensornumber() {
+		return sensornumber;
+	}
 	public String getName() {
 		return name;
 	}
@@ -61,14 +83,12 @@ public class Station extends Timed implements ConsumptionEvent {
 	}
 
 	/**
-	 * A Station repo-jabol inditott requestContentDelivery altal kuldott SO
-	 * sikeres megerkezeset jelzi
-	 * @throws NetworkException 
+	 *  A Station repo-jabol inditott requestContentDelivery altal kuldott SO
+	 * 	sikeres megerkezeset jelzi
 	 */
 	@Override
 	public void conComplete()   {	
-		System.out.println("conComplete has been called!");
-		
+		//System.out.println("conComplete has been called!");
 	}
 
 	/**
@@ -80,45 +100,82 @@ public class Station extends Timed implements ConsumptionEvent {
 		System.out.println("conCancelled has been called!");
 	}
 
-	private void startCommunicate() throws NetworkException {
+	/**
+	 * Ideiglenes! Kesobb: Parametere a cel repo
+	 * @throws NetworkException
+	 */
+	private void startCommunicate(Repository r) throws NetworkException {
 		for (StorageObject so : repo.contents()) {
-			repo.requestContentDelivery(so.id, Cloud.iaas.repositories.get(0), this);	
+			repo.requestContentDelivery(so.id, r, this);	
 		}
 	}
 
-	public void startMeter(final long interval) {
+	/**
+	 * Elinditja a Station mukodeset
+	 * @param interval frekvencia
+	 */
+	private void startMeter(final long interval) {
 		if(isWorking){
 			subscribe(interval);
 		}
 	}
-	
-	public void stopMeter() {
+	/**
+	 * leallitja a Station mukodeset
+	 */
+	private void stopMeter() {
 		unsubscribe();
 	}
-	
+	/**
+	 * megkeresi a cel repository-t az iaas felhoben
+	 * @param torepo a cel repo azonositoja
+	 * @return
+	 */
+	private Repository findRepo(String torepo){
+		Repository r=null;
+		
+		for(Repository tmp : Cloud.iaas.repositories){
+			if(tmp.getName().equals(torepo)){
+				r=tmp;
+			}
+			else{
+				for(PhysicalMachine pm :Cloud.iaas.machines){
+					if(pm.localDisk.getName().equals(torepo)){
+						r=pm.localDisk;
+					}
+				}
+			}
+		}
+		return r;
+	}
+	/**
+	 *  Ha letelt a Station mukodesenek ideje, leallitja azt
+	 *  Adatot gyujt & elkuldi a reponak
+	 */
 	@Override
 	public void tick(long fires)  {
-		if(Timed.getFireCount()>5000L){
+		if(Timed.getFireCount()>time){
 			this.stopMeter();
 		}
-		new Metering(this.name);
+		for(int i=0;i<sensornumber;i++){
+			new Metering(this.name,i,filesize);
+		}
 		try {
-			this.startCommunicate();
-		} catch (NetworkException e) {
+			Repository r = findRepo(this.toRepoID);
+			if(r!=null){
+				this.startCommunicate(r);
+			}else{
+				System.out.println("Nincs kapcsolat a repo-k kozott!");
+			}
 			
+		} catch (NetworkException e) {
 			e.printStackTrace();
 		}
 	}
-	
-public static void main(String[] args) throws Exception{
-		new Cloud(Cloud.v);
-		Station s = new Station("stat-1",10);
-		
-		
-		Timed.simulateUntilLastEvent();
-		System.out.println(s.repo);
-		System.out.println("~~~~~~~~~~~~");
-		System.out.println(Cloud.iaas.repositories.toString());
-		
+	@Override
+	public String toString() {
+		return "Station [toRepoID=" + toRepoID + ", name=" + name + ", time=" + time + ", filesize=" + filesize
+				+ ", sensornumber=" + sensornumber + "]";
 	}
+
+	
 }
