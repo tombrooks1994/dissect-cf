@@ -3,6 +3,9 @@ package iot.extension;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.HashMap;
+
+import org.omg.Messaging.SyncScopeHelper;
+
 import hu.mta.sztaki.lpds.cloud.simulator.io.*;
 import hu.mta.sztaki.lpds.cloud.simulator.io.NetworkNode.NetworkException;
 import hu.mta.sztaki.lpds.cloud.simulator.util.PowerTransitionGenerator;
@@ -13,20 +16,60 @@ import hu.mta.sztaki.lpds.cloud.simulator.iaas.resourcemodel.*;
 import hu.mta.sztaki.lpds.cloud.simulator.iaas.resourcemodel.ResourceConsumption.ConsumptionEvent;
 
 public class Station extends Timed {
+	
+	/**
+	 * Kulon osztaly a Station fobb adatainak a konnyebb attekinthetoseg erdekeben
+	 */
+	public static class Stationdata {
+		public long lifetime;
+		public long starttime;
+		public long stoptime;
+		public int filesize;
+		public int sensornumber;
+		public long freq;
+		public String name;
+		public String torepo;
+		public int ratio;
+		
+		/**
+		 * @param lt
+		 * @param st
+		 * @param stt
+		 * @param fs
+		 * @param sn
+		 * @param freq
+		 * @param name
+		 * @param torepo
+		 * @param ratio
+		 */
+		public Stationdata(long lt,long st,long stt,int fs,int sn,long freq,String name,String torepo,int ratio){
+			this.lifetime=lt;
+			this.starttime=st;
+			this.stoptime=stt;
+			this.filesize=fs;
+			this.sensornumber=sn;
+			this.freq=freq;
+			this.name=name;
+			this.torepo=torepo;		
+			this.ratio=ratio;
+		}
+		@Override
+		public String toString() {
+			return "name=" + name + ", lifetime=" + lifetime + ", starttime="
+					+ starttime + ", stoptime=" + stoptime + ", filesize=" + filesize + ", sensornumber=" + sensornumber
+					+ ", freq=" + freq +  ", torepo=" + torepo + " ,ratio="+ratio;
+		}
+	}
+	
+	private Stationdata sd;
 	private Repository repo;
 	private Repository torepo;
-	private String repoID;
-	private String toRepoID;
-	private String name;
-	private long time;
-	private long starttime;
+	private long reposize;
 	private HashMap<String, Integer> lmap;
 	private int lat;
-	private int filesize;
-	private int sensornumber;
 	private PhysicalMachine pm;
 	private boolean isWorking;
-	private long reposize;
+	private boolean isMetering;
 	public static ArrayList<Station> stations = new ArrayList<Station>();
 	private static final double minpower = 20;
 	private static final double idlepower = 200;
@@ -44,58 +87,37 @@ public class Station extends Timed {
 	}
 
 	/**
-	 * 
-	 * @param name a station neve, egyedinek kell lennie : String
-	 * @param freq a station frekvenciaja : Long
-	 * @param time a teljes meres ideje : long
-	 * @param starttime a meres kezdetenek az ideje: Long
-	 * @param sensornumber a szenzorok szama : int
-	 * @param filesize a meres altal generalt file merete : int
 	 * @param maxinbw a repo savszelessege : Long
 	 * @param maxoutbw a repo savszelessege : Long
 	 * @param diskbw a repo savszelessege : Long
-	 * @param torepo a celrepo : String
-	 * @param reposize a station repo-janak a merete: Long
+	 * @param reposize a repo merete: Long
+	 * @param sd station-t jellemzo adatok : Stationdata
 	 */
-	public Station(String name, final long freq, long time,long starttime, int sensornumber, int filesize, long maxinbw, long maxoutbw,
-			long diskbw, String torepo,long reposize) {
-		this.reposize = reposize;
-		this.starttime = starttime;		
-		isWorking = starttime==-1 ? false : true;
-		this.name = name;
-		this.filesize = filesize;
-		this.time = time;
-		this.sensornumber = sensornumber;
+	public Station(long maxinbw, long maxoutbw,long diskbw,long reposize,final Stationdata sd) {
+		this.sd=sd;
+		isWorking = sd.lifetime==-1 ? false : true;
 		lmap = new HashMap<String, Integer>();
 		lat = 11;
-		toRepoID = torepo;
-		repoID = this.name;
-		lmap.put(repoID, lat);
-		lmap.put(toRepoID, lat);
-		repo = new Repository(this.reposize, repoID, maxinbw, maxoutbw, diskbw, lmap);
+		lmap.put(sd.name, lat);
+		lmap.put(sd.torepo, lat);
+		this.reposize=reposize;
+		repo = new Repository(this.reposize, sd.name, maxinbw, maxoutbw, diskbw, lmap);
 		pm = new PhysicalMachine(8, 0.00155875, 8000000000L, repo, 89000, 29000, defaultTransitions);
-		this.torepo = this.findRepo(this.toRepoID);
-		this.startMeter(freq);	
+		this.torepo = this.findRepo(sd.torepo);
+		this.startMeter(sd.freq);	// ezt majd mashol kell meghivni, ideiglenes!!
 	}
-
-	/*
-	 * Getterek&Setterek
-	 */
-	public long getTime() {
-		return time;
-	}
-	public boolean isWorking() {
-		return isWorking;
-	}
-	public int getSensornumber() {
-		return sensornumber;
-	}
-	public String getName() {
-		return name;
+	
+	public String getName(){
+		return this.sd.name;
 	}
 	public Repository getRepo() {
-		return this.repo;
+		return repo;
 	}
+
+	public void setRepo(Repository repo) {
+		this.repo = repo;
+	}
+
 
 	/**
 	 *	Ha sikeresen megerkezett a celrepo-ba a SO, torli a Station repojabol
@@ -140,6 +162,7 @@ public class Station extends Timed {
 	private void startMeter(final long interval) {
 		if (isWorking) {
 			subscribe(interval);
+			isMetering = true;
 		}			
 	}
 
@@ -181,19 +204,24 @@ public class Station extends Timed {
 	@Override
 	public void tick(long fires) {
 		// a meres a megadott ideig tart csak
-		if (Timed.getFireCount() < time  && Timed.getFireCount()>=starttime) {
-			for (int i = 0; i < sensornumber; i++) {
-				new Metering(this.name, i, filesize);
+		if (Timed.getFireCount() < sd.lifetime  && Timed.getFireCount()>=sd.starttime && Timed.getFireCount()<=sd.stoptime) {
+			for (int i = 0; i < sd.sensornumber; i++) {
+				new Metering(sd.name, i, sd.filesize);
 			}
+		}else if(Timed.getFireCount()>sd.stoptime){ 
+			isMetering = false;
 		}
 		// de a station mukodese addig amig az osszes SO el nem lett kuldve
-		if (this.repo.getFreeStorageCapacity() == this.reposize && Timed.getFireCount() > time) {
+		if (this.repo.getFreeStorageCapacity() == reposize && Timed.getFireCount() > sd.lifetime) {
 			this.stopMeter();
 		}
 		// megkeresi a celrepo-t es elkuldeni annak
 		try {
-			if (this.torepo!= null) {
-				this.startCommunicate(this.torepo);
+			if (this.torepo!= null) { 
+				if((this.repo.getMaxStorageCapacity()-this.repo.getFreeStorageCapacity())>=sd.ratio*sd.filesize || isMetering==false){
+					this.startCommunicate(this.torepo);
+				}
+				
 			} else {
 				System.out.println("Nincs kapcsolat a repo-k kozott!");
 			}
@@ -207,8 +235,6 @@ public class Station extends Timed {
 	 */
 	@Override
 	public String toString() {
-		return "Station [" + "Working:"+this.isWorking +" ,reposize:" + this.repo.getMaxStorageCapacity() + " ,toRepoID=" + toRepoID + ", name=" + name + ", time=" + time
-				+ ", filesize=" + filesize + ", sensornumber=" + sensornumber + "]";
+		return "Station [" +sd+", reposize:" + this.repo.getMaxStorageCapacity() + "]";
 	}
-	
 }

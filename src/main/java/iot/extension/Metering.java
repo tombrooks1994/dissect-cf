@@ -15,7 +15,6 @@ public class Metering extends DeferredEvent {
 		this.i = i;
 		this.filesize = filesize;
 		this.sName = sName;
-
 	}
 
 	@Override
@@ -29,6 +28,5 @@ public class Metering extends DeferredEvent {
 				s.getRepo().registerObject(so);
 			}
 		}
-
 	}
 }

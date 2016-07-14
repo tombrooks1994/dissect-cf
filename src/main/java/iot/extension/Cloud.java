@@ -2,6 +2,8 @@ package iot.extension;
 
 import hu.mta.sztaki.lpds.cloud.simulator.util.*;
 import java.io.IOException;
+import java.util.ArrayList;
+
 import javax.xml.parsers.ParserConfigurationException;
 import org.xml.sax.SAXException;
 import hu.mta.sztaki.lpds.cloud.simulator.iaas.*;
