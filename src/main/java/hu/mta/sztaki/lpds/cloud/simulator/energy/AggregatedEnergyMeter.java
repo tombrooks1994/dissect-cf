@@ -89,8 +89,25 @@ public class AggregatedEnergyMeter extends EnergyMeter {
 		final int supSize = supervised.size();
 		for (int i = 0; i < supSize; i++) {
 			supervised.get(i).stopMeter();
+		
+			
+			// Testing the git for changes and seeing if the stopMeter is updating with 
+			// messages telling the user whether it has changed using println's
+			// Tom Brooks 23/10/2016
+			
+		if (supSize == '0'){
+			
+			System.out.println("No failures were updated");
+			
+		} else {
+			
+			System.out.println("Failures were updated");			
 		}
+		
+		}
+		
 	}
+		
 
 	/**
 	 * Calculates the sum of total consumptions returned by each and every
