@@ -52,6 +52,14 @@ import org.junit.Test;
 import at.ac.uibk.dps.cloud.simulator.test.ConsumptionEventAssert;
 import at.ac.uibk.dps.cloud.simulator.test.IaaSRelatedFoundation;
 
+
+// reqcores = required cores
+// reqProcessing = required processes 
+// reqmem = required memory
+// reqOnd = ?
+// reqOffd = ?
+// aSecond = ?
+
 public class PMTest extends IaaSRelatedFoundation {
 	final static int reqcores = 2, reqProcessing = 3, reqmem = 4,
 			reqond = 2 * (int) aSecond, reqoffd = (int) aSecond;
@@ -63,8 +71,10 @@ public class PMTest extends IaaSRelatedFoundation {
 			reqcores, reqProcessing, reqmem * 2);
 	final static ResourceConstraints overProcessingConstraints = new ConstantConstraints(
 			reqcores, reqProcessing * 2, reqmem);
+	// pmid = physical machine id 
 	final static String pmid = "TestingPM";
 	PhysicalMachine pm;
+	// reqDisk = required disk  
 	Repository reqDisk;
 	HashMap<String, Integer> latmap = new HashMap<String, Integer>();
 
