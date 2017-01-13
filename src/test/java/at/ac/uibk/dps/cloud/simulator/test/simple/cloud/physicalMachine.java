@@ -1,19 +1,9 @@
 package at.ac.uibk.dps.cloud.simulator.test.simple.cloud;
 
-
-import java.io.File;
 import java.io.FileWriter;
-import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-
-import org.junit.Assert;
-
-import hu.mta.sztaki.lpds.cloud.simulator.iaas.IaaSService;
-import hu.mta.sztaki.lpds.cloud.simulator.iaas.pmscheduling.AlwaysOnMachines;
-import hu.mta.sztaki.lpds.cloud.simulator.iaas.vmscheduling.FirstFitScheduler;
-import hu.mta.sztaki.lpds.cloud.simulator.util.CloudLoader;
 
 /**
  * This class is for the creation of a physical machine. There is a physical machine
@@ -33,7 +23,6 @@ import hu.mta.sztaki.lpds.cloud.simulator.util.CloudLoader;
  * 
  */
 
-
 public class physicalMachine {
 
 	/**
@@ -46,7 +35,7 @@ public class physicalMachine {
 		
 	
 	/**
-	 * 2nd stage creates the 1000 physical machines using the array's that are created
+	 * This file creates the 1000 physical machines using the array's that are created
 	 * above. The helper above just sets example minimums and maximums there will be
 	 * different values used in the actual PM creator. 
 	 * */	
@@ -200,7 +189,7 @@ public class physicalMachine {
 	     * through the arrays 1000 times and chooses 1000 random values to generate
 	     * 1000 physical machines.
 	     * */
-	    try (FileWriter file = new FileWriter("PM.txt")) {
+	    try (FileWriter file = new FileWriter("PM.xml")) {
 	    	  
 	    Random random = new Random();
 
@@ -227,7 +216,7 @@ public class physicalMachine {
 			
 			+ "<statedelays startup=\"89000\" shutdown=\"29000\" />\n"
 			
-			+ "<repository id=\"disk\"capacity=\"" + diskSpace.get(random.nextInt(diskSpace.size())) 
+			+ "<repository id=\"disk\" capacity=\"" + diskSpace.get(random.nextInt(diskSpace.size())) 
 			+ "\" inBW=\"" + inBW.get(random.nextInt(inBW.size())) + "\" outBW=\"" 
 			+ outBW.get(random.nextInt(outBW.size())) + "\" diskBW=\"" + diskBW.get(random.nextInt(diskBW.size())) + "\">\n"
 			
@@ -271,7 +260,7 @@ public class physicalMachine {
 			+ "</powerstates>\n" 
 			
 			+ "<latency towards=\"disk\" value=\"" + latency.get(random.nextInt(latency.size()))  + "\" />\n"
-			+ "</repository>\n" + "</cloud>\n\n\n";
+			+ "</repository>\n" + "</cloud>\n\n";
 	        
 	        file.write(newxml);
 	        
