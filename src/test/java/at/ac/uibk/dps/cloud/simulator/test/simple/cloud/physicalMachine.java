@@ -1,5 +1,6 @@
 package at.ac.uibk.dps.cloud.simulator.test.simple.cloud;
 
+import java.io.File;
 import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.List;
@@ -171,10 +172,10 @@ public class physicalMachine {
 	     * */
 	    
 	    List<String> resp = new ArrayList<String>();
-	    resp.add("hydrogen");
-	    resp.add("carbon");
-	    resp.add("neon");
-	    resp.add("kepler");
+	    resp.add("kappa-theta");
+	    resp.add("sigma-upsilon");
+	    resp.add("delta-omega-sigma");
+	    resp.add("delta-gamma-theta");
 	    
 	    /**
 	     * End of repository array
@@ -216,15 +217,28 @@ public class physicalMachine {
 	     * 1000 physical machines.
 	     * */
 	    try (FileWriter file = new FileWriter("PM.xml")) {
-	    	  
+	    try (FileWriter txt = new FileWriter("PM.txt")) {
+	    	
 	    Random random = new Random();
 
+	    /**
+	     * 
+	     * xml being written for 1000 physical machines with randomised values
+	     * using the hu.mta.sztaki.lpds.cloud.similator scheduler this is written
+	     * into an xml file named "PM.xml".
+	     * 
+	     * The output has been put into the console for testing purposes so that
+	     * the user is able to see the creation of the physical machines.
+	     * 
+	     * */
+	    
+	    
 	    for (int x = 0; x < 1000; x++) {
 	        
 	        String newxml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-			+ "<cloud id=\"oxygen\"	scheduler=\"hu.mta.sztaki.lpds.cloud.simulator.iaas.vmscheduling.FirstFitScheduler\" pmcontroller=\"hu.mta.sztaki.lpds.cloud.simulator.iaas.pmscheduling.AlwaysOnMachines\">\n"
+			+ "<cloud id=\"theta-omega-mu\"	scheduler=\"hu.mta.sztaki.lpds.cloud.simulator.iaas.vmscheduling.FirstFitScheduler\" pmcontroller=\"hu.mta.sztaki.lpds.cloud.simulator.iaas.pmscheduling.AlwaysOnMachines\">\n"
 			
-			+ "<machine id=\"" + (x+1) + "\" cores=\"" + (cores.get(random.nextInt(cores.size()))) 
+			+ "<machine id=\"" + (x+1) + " beta-gamma-theta" + "\" cores=\"" + (cores.get(random.nextInt(cores.size()))) 
 			+"\" processing=\"" + (processSpeed.get(random.nextInt(processSpeed.size()))) 
 			+ "\" memory=\"" + (diskSpace.get(random.nextInt(diskSpace.size()))) + "\">\n"
 			
@@ -292,11 +306,30 @@ public class physicalMachine {
 	        file.write(newxml);
 	        
 	        System.out.println(newxml);
+	        
+	        
 
 	    }
 	    
+	    File xml = new File("PM.xml");
+	    File text = new File("PM.txt");
+	    
+	    if((xml.exists() && !xml.isDirectory()) && (text.exists() && !text.isDirectory())) {
+        	
+        	System.out.println("1. Success, The physical machines have been created and written to the following file path: " 
+        						+ xml);
+        	System.out.println("2. Success, The physical machines have been created and written to the following file path: " 
+					+ text);
+        	
+        } else {
+        	
+        	System.out.println("Failure, The physical machines have failed to be created.");
+        	
+        }
+	    
+	    
 	    }
-
+	    }
 	    /** End of physical machine creator */
 	}
 }
