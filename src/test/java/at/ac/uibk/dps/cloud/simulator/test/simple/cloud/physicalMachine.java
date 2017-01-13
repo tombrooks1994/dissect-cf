@@ -227,7 +227,9 @@ public class physicalMachine {
 			
 			+ "<statedelays startup=\"89000\" shutdown=\"29000\" />\n"
 			
-			+ "<repository id=\"disk\" capacity=\"5000000000000\" inBW=\"250000\" outBW=\"250000\" diskBW=\"50000\">\n"
+			+ "<repository id=\"disk\"capacity=\"" + diskSpace.get(random.nextInt(diskSpace.size())) 
+			+ "\" inBW=\"" + inBW.get(random.nextInt(inBW.size())) + "\" outBW=\"" 
+			+ outBW.get(random.nextInt(outBW.size())) + "\" diskBW=\"" + diskBW.get(random.nextInt(diskBW.size())) + "\">\n"
 			
 			+ "<powerstates kind=\"storage\">\n"
 			+ "<power model=\"hu.mta.sztaki.lpds.cloud.simulator.energy.powermodelling.LinearConsumptionModel\" "
@@ -247,7 +249,7 @@ public class physicalMachine {
 			+ "</repository>\n"
 			+ "</machine>\n"
 			
-			+ "<repository id=\"hydrogen\" capacity=\"" + diskSpace.get(random.nextInt(diskSpace.size())) 
+			+ "<repository id=\"repo\" capacity=\"" + diskSpace.get(random.nextInt(diskSpace.size())) 
 			+ "\" inBW=\"" + inBW.get(random.nextInt(inBW.size())) + "\" outBW=\"" 
 			+ outBW.get(random.nextInt(outBW.size())) + "\" diskBW=\"" + diskBW.get(random.nextInt(diskBW.size())) + "\">\n"
 			
