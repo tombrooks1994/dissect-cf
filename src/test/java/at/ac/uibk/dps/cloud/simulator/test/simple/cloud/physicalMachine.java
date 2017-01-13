@@ -179,6 +179,32 @@ public class physicalMachine {
 	    /**
 	     * End of repository array
 	     * */
+	  
+	    /**
+	     * Power state array which is measured in milliseconds e.g. 1 second = 1000ms 
+	     * */
+	    
+	    List<String> powerStateOn = new ArrayList<String>();
+	    powerStateOn.add("35000");
+	    powerStateOn.add("45000");
+	    powerStateOn.add("55000");
+	    powerStateOn.add("65000");
+	    powerStateOn.add("75000");
+	    powerStateOn.add("85000");
+	    
+	    List<String> powerStateOff = new ArrayList<String>();
+	    powerStateOff.add("15000");
+	    powerStateOff.add("20000");
+	    powerStateOff.add("25000");
+	    powerStateOff.add("30000");
+	    powerStateOff.add("35000");
+	    powerStateOff.add("40000");
+	    
+	    /**
+	     * End of power state array
+	     * */
+	    
+	    
 	    
 	    /**
 	     * This is the final stage of creation of the physical machines
@@ -214,7 +240,8 @@ public class physicalMachine {
 			+ "\" max=\"" + maxPowerPM.get(random.nextInt(maxPowerPM.size())) + "\" inState=\"OFF\" />\n"
 			+ "</powerstates>\n"
 			
-			+ "<statedelays startup=\"89000\" shutdown=\"29000\" />\n"
+			+ "<statedelays startup=\"" + powerStateOn.get(random.nextInt(powerStateOn.size())) 
+			+ "\" shutdown=\"" + powerStateOff.get(random.nextInt(powerStateOff.size())) + "\" />\n"
 			
 			+ "<repository id=\"disk\" capacity=\"" + diskSpace.get(random.nextInt(diskSpace.size())) 
 			+ "\" inBW=\"" + inBW.get(random.nextInt(inBW.size())) + "\" outBW=\"" 
